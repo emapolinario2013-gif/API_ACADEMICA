@@ -1,0 +1,393 @@
+Pós-Graduação em Sistemas e Agentes Inteligentes
+    Construção de APIs para Inteligência Artificial
+
+                           Rogério Rodrigues Carvalho
+        Sumário
+
+1. Plano de ensino
+2. Apresentação
+3. Fundamentos e conceitos de APIs
+4. Arquitetura de APIs
+5. Exemplos de APIs
+6. Primeiros passos para desenvolvimento de
+
+     APIs
+7. Atividade prática
+
+                                                                                                                                              2
+Plano de ensino
+
+                                                                                                                      3
+Expectativas
+
+                                                                                                                      4
+Apresentação
+
+                                                                                                                      5
+Apresentação
+
+  Graduação em Sistemas de Informação - IFG
+
+          TCC: Desenvolvimento de um sistema de predição educacional utilizando
+               Aprendizagem de Máquina
+
+  Especialização em Design de Sistemas e Soluções de
+      Business Intelligence - INF/UFG
+
+          TCC: Sistema de auto machine learning aplicado à predição de
+               desempenho de ações para o mercado de valores BM&F Bovespa
+
+  Mestrado em Ciência da Computação - INF/UFG
+
+          Dissertação: Classificação de documentos da administração pública
+               utilizando inteligência artificial
+
+  Analista de TI na UFG desde 2017
+
+          Líder técnico da plataforma de análise de dados da UFG: Analisa UFG
+               (analisa.ufg.br)
+
+                                                                                                                                                                                                          6
+Apresentação
+
+  Atuo em projetos do CEIA/INF
+
+          Sissa: sissa.ufg.br
+          LicIA
+
+  Atuação em projetos de outros países
+  Palestrante convidado na Campus Party Goiás 2019
+
+          Como agregar valor na vida das pessoas com Machine Learning e Data
+               Science: Cases de sucesso com a utilização de Python
+
+  Mentor convidado no Hackaton da NASA realizado em
+      Goiânia
+
+  Mentor na Maratona de Inovação da UFMT
+  Linkedin: https://www.linkedin.com/in/rogerionrc/
+  Github: https://github.com/rogerior
+
+                                                                                                                                                                                                          7
+Fundamentos e
+Conceitos de
+APIs
+
+                                                                                                                      8
+O que é uma API?
+
+  Palpites?
+  Alguém já utilizou?
+  Analogias?
+
+                                                                                                                                                                                                          9
+História e Evolução das APIs
+
+  API: Application Programming Interface
+  Permitir uma comunicação padronizada entre diferentes
+
+      sistemas
+  https://traefik.io/blog/the-history-and-evolution-of-apis/
+
+                                                                                                                                                                                                        10
+História e Evolução das APIs
+
+                                                                                                                                                                                                        11
+História e Evolução das APIs
+
+  Papel fundamental das APIs na transformação digital e
+      criação de ecossistemas
+
+  Conexão entre aplicações internas (microserviços) ou entre
+      empresas (B2B)
+
+  APIs se tornaram produtos
+
+                                                                                                                                                                                                        12
+História e Evolução das APIs
+
+  MVC / MTV
+  Back-end e Front-end separados
+
+                                                                                                                                                                                                        13
+Tipos de APIs e protocolos comuns
+
+  SOAP (Simple Object Access Protocol)
+
+          Mais antigo, estrutura baseada em XML
+          Ainda utilizado em sistemas legados e ambientes corporativos
+
+                                                                                                                                                                                                        14
+Tipos de APIs e protocolos comuns
+
+  REST (Representational State Transfer)
+
+          Baseada em recursos e métodos HTTP (GET, POST, PUT, DELETE).
+          Dados em JSON ou XML
+
+                                                                                                                                                                                                        15
+Tipos de APIs e protocolos comuns
+
+  Tendências:
+  GraphQL (Facebook)
+
+          Permite especificar exatamente quais campos e dados deseja receber,
+               evitando requisições muito grandes ou muito limitadas
+
+  gRPC (Google)
+
+          Foco em alto desempenho, similar a uma estrada expressa onde os dados
+               trafegam em formato binário mais rápido
+
+          https://aws.amazon.com/pt/compare/the-difference-between-grpc-and-re
+               st/
+
+                                                                                                                                                                                                        16
+Benefícios em utilizar APIs
+
+                                                                                                                                                                                                        17
+Benefícios em utilizar APIs
+
+  Padronização
+  Modularidade e reuso de código
+  Interoperabilidade
+  Separação de responsabilidades (Front-end vs back-end)
+  Desacoplamento
+  Escalabilidade
+  Democratiza acesso a serviços
+  Rapidez de desenvolvimento
+  Abordagem API-first
+
+          Google
+
+  Importância para Inteligência Artificial
+
+          Facilita o consumo de modelos de IA em diferentes sistemas
+
+                                                                                                                                                                                                        18
+Desvantagens em utilizar APIs
+
+                                                                                                                                                                                                        19
+Desvantagens em utilizar APIs
+
+  Complexidade de Integração
+
+          Utilizar múltiplos serviços externos aumenta a complexidade
+
+  Sobrecarga de Comunicação
+
+          Chamadas HTTP sucessivas podem tornar as operações mais lentas quando
+               comparadas a chamadas internas
+
+          Dependência de rede pode introduzir latência, instabilidade e problemas de
+               disponibilidade
+
+  Manutenção e Versionamento
+
+          A API precisa ser versionada para não quebrar integrações existentes quando
+               novas funcionalidades ou mudanças são realizadas
+
+          Garantir compatibilidade retroativa
+
+                                                                                                                                                                                                        20
+Desvantagens em utilizar APIs
+
+  Dependência de Terceiros
+
+          Se a API consumida é de um serviço externo, qualquer alteração, instabilidade ou
+               limitação desse provedor afeta diretamente sua aplicação
+
+          Possíveis custos ou limitações de uso (rate limiting, quotas de chamadas)
+
+  Segurança e Proteção de Dados
+
+          Endpoints abertos para clientes externos expõe o sistema a riscos de invasões e
+               ataques de DDoS
+
+          Exige a implementação contínua de práticas de segurança (autenticação,
+               criptografia, monitoramento)
+
+  Gestão de Credenciais e Políticas de Acesso
+
+          Erros na configuração de permissões podem expor dados críticos ou permitir
+               alterações indevidas.
+
+                                                                                                                                                                                                        21
+Terminologia comum em APIs
+
+ Endpoint: URL que recebe as requisições (ex.: /api/v1/users)
+
+ Recurso (Resource): o que a API expõe (usuários, produtos,
+
+pedidos etc.)
+
+ Métodos HTTP
+
+ GET: ler/obter recursos
+
+ POST: criar recursos
+
+ PUT: atualizar recursos
+
+ PATCH: atualização parcial
+
+ DELETE: remover recursos
+
+ Status Codes
+
+ 2xx: sucesso (ex.: 200 OK, 201 Created).
+
+ 4xx: erros do cliente (ex.: 400 Bad Request, 404 Not Found).
+
+ 5xx: erros do servidor (ex.: 500 Internal Server Error).
+
+ Payload / Corpo da requisição: JSON, XML, etc                 22
+Arquitetura de
+APIs
+
+                                                                                                                    23
+Pilares da arquitetura de APIs
+
+                                                                                                                                                                                                        24
+Pilares da arquitetura de APIs
+
+  Escalabilidade
+
+          Projetar para suportar crescimento de usuários e utilização
+
+  Confiabilidade
+
+          Lidar com falhas, tolerância a erros, redundância
+
+  Segurança
+
+          Autenticação, autorização, criptografia, boas práticas
+
+  Manutenibilidade
+
+          Código limpo, padronização, versionamento, reutilização, documentação
+
+                                                                                                                                                                                                        25
+Arquitetura RESTful
+
+                                                                                                                                                                                                        26
+Camadas de uma API
+
+  Camada de Entrada (Controllers ou Routers)
+
+          Recebe as requisições
+
+  Camada de Negócio (Services)
+
+          Aplicação da lógica de negócio
+
+  Camada de Acesso a Dados (Models/ORM)
+
+          Comunicação com o banco de dados
+
+                                                                                                                                                                                                        27
+Padrões de projeto em APIs
+
+  Monólitos
+  Microsserviços
+
+                                                                                                                                                                                                        28
+Exemplos de
+APIs
+
+                                                                                                                    29
+Exemplos de APIs
+
+  Sissa
+
+          https://api.sissa.ufg.br/
+
+  OpenAI
+
+          https://developers.openai.com/api/docs
+
+  Google
+  Twitter / X
+  IBGE
+
+          https://servicodados.ibge.gov.br/api/docs
+
+  Free API
+  MGI - PGD
+
+          https://github.com/gestaogovbr/api-pgd
+
+                                                                                                                                                                                                        30
+Desenvolvimento
+de APIs
+
+                                                                                                                    31
+Hello world
+
+  FastAPI
+
+          https://github.com/fastapi/fastapi
+
+                                                                                                                                                                                                        32
+Hello world
+
+ FastAPI
+
+ Inicialização utilizando o gerenciador de pacotes UV
+
+ pip install uv
+
+ uv init
+
+ Instalar o fastapi
+
+ uv add "fastapi[standard]"
+
+ Ativar o ambiente virtual (caso não tenha sido ativado automaticamente)
+
+ No windows: .venv\Scripts\activate
+
+ No linux: source .venv/bin/activate
+
+ Copie o código de exemplo do github do fastapi: link
+
+ Rode o fastapi
+
+ fastapi dev
+
+ Acesse via navegador
+
+ http://127.0.0.1:8000/docs
+
+ http://localhost:8000/docs                                               33
+Atividade prática
+
+                                                                                                                    34
+Utilização de API
+
+  Postman
+
+          https://www.postman.com/
+
+  OpenAI
+
+          https://platform.openai.com/api-keys
+          https://developers.openai.com/api/docs
+
+  Groq
+
+          https://console.groq.com/keys
+          https://console.groq.com/docs/overview
+
+  IBGE
+
+          https://servicodados.ibge.gov.br/api/docs
+
+                                                                                                                                                                                                        35
+Obrigado
+
+           Dúvidas?
+
+                    rogerior@ufg.br
+                    62 986058772
+

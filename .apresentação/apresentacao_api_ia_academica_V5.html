@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API de IA Acadêmica — Trabalho Final CAPI/UFG</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        white: '#1c2e24', // Redefine o branco do Tailwind para o tom de verde sage escuro
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* ── PALETA SAGE & TERRACOTTA (TEMA CLARO) ── */
+        :root {
+            --sage:       #3D5A4A;
+            --sage-mid:   #4A6B59;
+            --terra:      #C0623A;
+            --terra-lit:  #D4784F;
+            --sage-light: #E8F0EB;
+            --bg-warm:    #E8F0EB;   /* versão clara do sage para fundo */
+            --bg-card:    rgba(61,90,74,0.06);
+        }
+
+        body {
+            background: #E8F0EB;
+            min-height: 100vh;
+            color: #1c2e24;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        /* Glass card — adaptado para o tema claro */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(61,90,74,0.15);
+            box-shadow: 0 10px 30px rgba(61,90,74,0.06);
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(61,90,74,0.12);
+        }
+
+        /* Cores primárias → terracotta */
+        .primary-color { color: #C0623A; }
+        .primary-bg    { background: #C0623A; }
+        .sage-color    { color: #3D5A4A; }
+        .sage-bg       { background: #3D5A4A; }
+
+        .icon-container {
+            width: 48px; height: 48px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(192,98,58,0.15);
+        }
+
+        /* Header gradient sage */
+        @keyframes gradientShift {
+            0%   { background-position: 0% 50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes scroll-bounce {
+            0%,100% { transform: translateY(0); }
+            50%     { transform: translateY(10px); }
+        }
+        @keyframes shimmer {
+            0%   { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+
+        /* Barra de progresso */
+        #reading-progress {
+            position: fixed; top: 0; left: 0; height: 3px;
+            background: linear-gradient(90deg, #C0623A, #D4784F, #C0623A);
+            background-size: 200% 100%;
+            animation: shimmer 2s linear infinite;
+            z-index: 9999; transition: width 0.1s linear;
+            box-shadow: 0 0 10px rgba(192,98,58,0.3);
+        }
+
+        /* Botão próximo card */
+        #next-card {
+            position: fixed; bottom: 32px; right: 32px;
+            width: 48px; height: 48px; border-radius: 50%;
+            background: rgba(192,98,58,0.9);
+            color: #ffffff;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; opacity: 0; transform: translateY(20px);
+            transition: all 0.3s ease; z-index: 9998;
+            box-shadow: 0 4px 20px rgba(192,98,58,0.4); border: none;
+        }
+        #next-card.visible { opacity: 1; transform: translateY(0); }
+        #next-card:hover   { transform: translateY(-3px) scale(1.1); box-shadow: 0 8px 30px rgba(192,98,58,0.6); }
+
+        /* Tag badge */
+        .tag { background: #C0623A; color: #ffffff; font-size:0.75rem; font-weight:700; padding:4px 14px; border-radius:999px; display:inline-block; }
+        .tag-sage { background: rgba(61,90,74,0.08); color: #3D5A4A; font-size:0.7rem; font-weight:700; padding:3px 10px; border-radius:999px; display:inline-block; border:1px solid rgba(61,90,74,0.2); }
+
+        /* Timeline line */
+        .tl-dot-active { background: #C0623A; }
+        .tl-dot-idle   { background: rgba(61,90,74,0.25); }
+
+        /* active timeline icons override */
+        .tl-dot-active i {
+            color: #ffffff !important;
+        }
+
+        /* Progress bar */
+        .progress-bar-fill { background: linear-gradient(90deg, #3D5A4A, #C0623A); height:100%; border-radius:999px; transition: width 2s ease-out; }
+
+        /* Código */
+        .code-bg { background: rgba(245,248,246,0.95); border: 1px solid rgba(61,90,74,0.15); }
+
+        /* Número destaque */
+        .counter-suffix::after { content: attr(data-suffix); }
+
+        /* Slide counter badge */
+        .slide-badge {
+            position:absolute; top:16px; right:16px;
+            font-size:0.65rem; font-weight:700; letter-spacing:0.1em;
+            color: rgba(61,90,74,0.65);
+        }
+
+        /* Divisor ornamental */
+        .ornament { width:40px; height:3px; background:#C0623A; display:inline-block; border-radius:2px; margin: 0 12px; vertical-align:middle; }
+
+        /* Check item */
+        .check-item { display:flex; align-items:flex-start; gap:10px; margin-bottom:10px; }
+        .check-icon { width:18px; height:18px; color:#C0623A; flex-shrink:0; margin-top:2px; }
+
+        /* Hover row tabela */
+        tr:hover td { background: rgba(61,90,74,0.06); }
+    </style>
+</head>
+<body class="font-sans">
+
+<!-- Barra de Progresso -->
+<div id="reading-progress" style="width:0%"></div>
+
+<!-- Botão Próximo Card -->
+<button id="next-card" aria-label="Próximo card">
+    <i data-lucide="chevron-down" class="w-6 h-6" id="next-card-icon" style="color: #ffffff !important;"></i>
+</button>
+
+<!-- ══════════════════════════════════════════════
+     HEADER — SLIDE 01
+══════════════════════════════════════════════ -->
+<header class="min-h-screen flex items-center justify-center relative overflow-hidden"
+    style="background: linear-gradient(-45deg,#E8F0EB,#D9E6DF,#E0ECE5,#D0E0D7); background-size:400% 400%; animation:gradientShift 15s ease infinite;">
+    <div class="absolute inset-0 pointer-events-none"
+        style="background-image: radial-gradient(circle at 20% 80%, rgba(192,98,58,0.12) 0%,transparent 55%), radial-gradient(circle at 80% 20%, rgba(61,90,74,0.15) 0%,transparent 55%);">
+    </div>
+    <div class="text-center relative z-10 px-6" data-aos="fade-down">
+        <span class="tag mb-6 inline-block">Trabalho Final · Construção de APIs para IA · UFG</span>
+        <h1 class="text-5xl md:text-7xl font-black mb-4 leading-tight">
+            API de <span style="color:#C0623A">IA</span><br>Acadêmica
+        </h1>
+        <p class="text-xl text-white/70 max-w-2xl mx-auto mb-8 leading-relaxed">
+            Dois agentes de inteligência artificial expostos como serviços REST —<br>
+            conteúdo das aulas e gestão de tarefas, em uma única API
+        </p>
+        <div class="flex items-center justify-center gap-6 flex-wrap">
+            <span class="tag-sage">FastAPI</span>
+            <span class="tag-sage">Hermes Agent</span>
+            <span class="tag-sage">NousResearch</span>
+            <span class="tag-sage">Pydantic v2</span>
+            <span class="tag-sage">pytest</span>
+        </div>
+        <p class="text-sm text-white/40 mt-8">Eliane Apolinario · Pós-Graduação em Sistemas e Agentes Inteligentes · INF/UFG · 2025/2026</p>
+        <div class="mt-6 inline-flex items-center gap-3 px-6 py-3 rounded-full" style="background:rgba(61,90,74,0.08);border:1px solid rgba(192,98,58,0.35)">
+            <span class="text-xs font-mono" style="color:#3D5A4A">Professor:</span>
+            <span class="text-sm font-bold text-white">Rogério Carvalho</span>
+            <span style="color:rgba(192,98,58,0.6)">―――</span>
+            <span class="text-xs font-mono" style="color:#3D5A4A">Aluna:</span>
+            <span class="text-sm font-bold text-white">Eliane Apolinario</span>
+        </div>
+    </div>
+    <button class="absolute bottom-8 right-8 flex flex-col items-center gap-2 cursor-pointer bg-transparent border-none group"
+        id="header-next-btn" aria-label="Iniciar apresentação"
+        style="animation:scroll-bounce 2s ease-in-out infinite;">
+        <span class="text-[10px] uppercase tracking-[4px] text-white/30 font-medium group-hover:text-[#C0623A] transition-colors">Iniciar</span>
+        <div class="w-10 h-10 rounded-full bg-[#1c2e24]/10 flex items-center justify-center group-hover:bg-[#C0623A]/20 transition-all">
+            <i data-lucide="chevron-down" class="w-5 h-5 text-white/40 group-hover:text-[#C0623A] transition-colors"></i>
+        </div>
+    </button>
+</header>
+
+<main class="container mx-auto px-4 py-20 flex flex-col items-center gap-[60vh]">
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 02 — AGENDA (card_lista adaptado)
+══════════════════════════════════════════════ -->
+<div class="glass-card rounded-xl p-10 w-full max-w-3xl relative" data-aos="fade-up" data-aos-delay="100">
+    <span class="slide-badge">02 / 14</span>
+    <div class="flex items-center mb-8">
+        <div class="icon-container"><i data-lucide="map" class="primary-color"></i></div>
+        <span class="ornament"></span>
+        <h3 class="text-3xl font-bold text-white">Agenda</h3>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="flex items-center gap-4 bg-white/5 rounded-lg p-4 border border-white/10">
+            <span class="text-2xl font-black primary-color">01</span>
+            <span class="text-white/90">Origem do projeto — contexto DAPIA</span>
+        </div>
+        <div class="flex items-center gap-4 bg-white/5 rounded-lg p-4 border border-white/10">
+            <span class="text-2xl font-black primary-color">02</span>
+            <span class="text-white/90">Problema e solução proposta</span>
+        </div>
+        <div class="flex items-center gap-4 bg-white/5 rounded-lg p-4 border border-white/10">
+            <span class="text-2xl font-black primary-color">03</span>
+            <span class="text-white/90">Tecnologias — Hermes Agent em destaque</span>
+        </div>
+        <div class="flex items-center gap-4 bg-white/5 rounded-lg p-4 border border-white/10">
+            <span class="text-2xl font-black primary-color">04</span>
+            <span class="text-white/90">Arquitetura e os dois serviços de IA</span>
+        </div>
+        <div class="flex items-center gap-4 bg-white/5 rounded-lg p-4 border border-white/10">
+            <span class="text-2xl font-black primary-color">05</span>
+            <span class="text-white/90">Requisitos técnicos implementados</span>
+        </div>
+        <div class="flex items-center gap-4 bg-white/5 rounded-lg p-4 border border-[#C0623A]/40" style="background:rgba(192,98,58,0.08)">
+            <span class="text-2xl font-black primary-color">06</span>
+            <span style="color:#C0623A" class="font-semibold">Demonstração ao vivo</span>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 03 — ORIGEM DAPIA (card_timeline)
+══════════════════════════════════════════════ -->
+<div class="glass-card rounded-xl p-10 w-full max-w-2xl relative" data-aos="fade-right" data-aos-delay="200">
+    <span class="slide-badge">03 / 14</span>
+    <div class="flex items-center mb-8">
+        <div class="icon-container"><i data-lucide="git-branch" class="primary-color"></i></div>
+        <span class="ornament"></span>
+        <h3 class="text-2xl font-bold text-white">Origem — A Disciplina DAPIA</h3>
+    </div>
+    <div class="space-y-8 relative">
+        <div class="absolute left-[19px] top-2 bottom-2 w-0.5 bg-[#1c2e24]/10"></div>
+        <div class="relative pl-14">
+            <div class="absolute left-0 top-1 w-10 h-10 rounded-full tl-dot-active flex items-center justify-center border-4" style="border-color:#E8F0EB">
+                <i data-lucide="book-open" class="w-4 h-4 text-white"></i>
+            </div>
+            <span class="tag-sage mb-1 inline-block">Ponto de partida</span>
+            <h4 class="text-lg font-bold text-white mt-1">Desenvolvimento Ágil para Projetos de IA — DAPIA</h4>
+            <p class="text-white/60 text-sm mt-1">Disciplina cursada simultaneamente à disciplina de Construção de APIs</p>
+        </div>
+        <div class="relative pl-14">
+            <div class="absolute left-0 top-1 w-10 h-10 rounded-full tl-dot-active flex items-center justify-center border-4" style="border-color:#E8F0EB">
+                <i data-lucide="bot" class="w-4 h-4 text-white"></i>
+            </div>
+            <span class="tag-sage mb-1 inline-block">Projeto do grupo</span>
+            <h4 class="text-lg font-bold text-white mt-1">Bot para Alunos da Pós-Graduação</h4>
+            <p class="text-white/60 text-sm mt-1">Dois agentes de IA: conteúdo das aulas + tarefas e prazos</p>
+        </div>
+        <div class="relative pl-14">
+            <div class="absolute left-0 top-1 w-10 h-10 rounded-full tl-dot-active flex items-center justify-center border-4" style="border-color:#E8F0EB">
+                <i data-lucide="send" class="w-4 h-4 text-white"></i>
+            </div>
+            <span class="tag-sage mb-1 inline-block">Interface</span>
+            <h4 class="text-lg font-bold text-white mt-1">Telegram — familiar e acessível aos alunos</h4>
+            <p class="text-white/60 text-sm mt-1">Tecnologia de agente escolhida pelo grupo: <strong class="primary-color">Hermes Agent da NousResearch</strong></p>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 04 — O PROBLEMA (card_lista)
+══════════════════════════════════════════════ -->
+<div class="glass-card rounded-xl p-10 w-full max-w-2xl relative" data-aos="fade-up" data-aos-delay="400">
+    <span class="slide-badge">04 / 14</span>
+    <div class="flex items-center mb-8">
+        <div class="icon-container"><i data-lucide="alert-triangle" class="primary-color"></i></div>
+        <span class="ornament"></span>
+        <h3 class="text-2xl font-bold text-white">O Problema</h3>
+    </div>
+    <ul class="space-y-6">
+        <li class="flex items-start gap-5">
+            <span class="text-5xl font-black primary-color leading-none mt-1">01</span>
+            <div>
+                <p class="text-white font-semibold">Volume de materiais</p>
+                <p class="text-white/60 text-sm mt-1">Alunos acumulam PDFs de aulas, múltiplas disciplinas e prazos simultâneos na pós-graduação</p>
+            </div>
+        </li>
+        <li class="flex items-start gap-5">
+            <span class="text-5xl font-black primary-color leading-none mt-1">02</span>
+            <div>
+                <p class="text-white font-semibold">Dúvidas custam tempo</p>
+                <p class="text-white/60 text-sm mt-1">Esclarecer dúvidas exige releitura manual de documentos extensos sem uma forma rápida de consulta</p>
+            </div>
+        </li>
+        <li class="flex items-start gap-5">
+            <span class="text-5xl font-black primary-color leading-none mt-1">03</span>
+            <div>
+                <p class="text-white font-semibold">Controle descentralizado</p>
+                <p class="text-white/60 text-sm mt-1">Tarefas e datas de entrega anotadas de forma manual, sem sistema unificado acessível</p>
+            </div>
+        </li>
+        <li class="flex items-start gap-5 pt-2 border-t border-[#1c2e24]/10">
+            <i data-lucide="lightbulb" class="w-8 h-8 primary-color flex-shrink-0 mt-1"></i>
+            <p class="text-white/80 text-sm italic">A DAPIA endereçou isso com agentes de IA via Telegram. Este trabalho adiciona a camada de API — tornando os agentes reutilizáveis por qualquer sistema.</p>
+        </li>
+    </ul>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 05 — SOLUÇÃO (card_destaques)
+══════════════════════════════════════════════ -->
+<div class="w-full max-w-5xl relative" data-aos="fade-up" data-aos-delay="500">
+    <div class="text-center mb-8">
+        <span class="slide-badge" style="position:static;display:inline-block;margin-bottom:8px">05 / 14</span>
+        <h3 class="text-3xl font-bold text-white">A Solução Proposta</h3>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <div class="glass-card rounded-2xl p-8 flex flex-col items-center text-center border-t-4" style="border-top-color:rgba(61,90,74,0.3)">
+            <i data-lucide="network" class="w-10 h-10 mb-4" style="color:rgba(61,90,74,0.7)"></i>
+            <h4 class="text-xl font-bold mb-2">API REST</h4>
+            <p class="text-white/60 text-sm mb-6">Camada de infraestrutura padronizada sobre os agentes</p>
+            <ul class="text-left text-sm text-white/80 space-y-3 w-full">
+                <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 primary-color"></i> Autenticação e segurança</li>
+                <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 primary-color"></i> Validação automática</li>
+                <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 primary-color"></i> Logs e monitoramento</li>
+            </ul>
+        </div>
+
+        <div class="glass-card rounded-2xl p-8 flex flex-col items-center text-center border-t-4 relative transform scale-105 z-10 shadow-2xl" style="border-top-color:#C0623A">
+            <div class="absolute -top-3 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-tighter" style="background:#C0623A; color:#ffffff !important;">Núcleo</div>
+            <i data-lucide="bot" class="w-10 h-10 mb-4 primary-color"></i>
+            <h4 class="text-xl font-bold mb-2 primary-color">2 Agentes de IA</h4>
+            <p class="text-white/60 text-sm mb-6">Hermes Agent especializado por função</p>
+            <ul class="text-left text-sm text-white/80 space-y-3 w-full">
+                <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 primary-color"></i> POST /v1/ask — conteúdo</li>
+                <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 primary-color"></i> POST /v1/tasks — prazos</li>
+                <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 primary-color"></i> System prompt dedicado</li>
+            </ul>
+        </div>
+
+        <div class="glass-card rounded-2xl p-8 flex flex-col items-center text-center border-t-4" style="border-top-color:rgba(61,90,74,0.3)">
+            <i data-lucide="layers" class="w-10 h-10 mb-4" style="color:rgba(61,90,74,0.7)"></i>
+            <h4 class="text-xl font-bold mb-2">Múltiplas Interfaces</h4>
+            <p class="text-white/60 text-sm mb-6">Mesmos agentes, qualquer cliente HTTP</p>
+            <ul class="text-left text-sm text-white/80 space-y-3 w-full">
+                <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 primary-color"></i> Bot Telegram (DAPIA)</li>
+                <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 primary-color"></i> Interface web futura</li>
+                <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 primary-color"></i> App mobile ou outro bot</li>
+            </ul>
+        </div>
+
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 06 — TECNOLOGIAS (card_tabela)
+══════════════════════════════════════════════ -->
+<div class="glass-card rounded-xl p-8 w-full max-w-4xl overflow-hidden relative" data-aos="fade-up" data-aos-delay="600">
+    <span class="slide-badge">06 / 14</span>
+    <div class="flex items-center mb-8">
+        <div class="icon-container"><i data-lucide="cpu" class="primary-color"></i></div>
+        <span class="ornament"></span>
+        <h3 class="text-2xl font-bold text-white">Tecnologias Utilizadas</h3>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-[#1c2e24]/20">
+                    <th class="py-3 px-4 font-bold uppercase text-sm tracking-wider" style="color:#C0623A">Tecnologia</th>
+                    <th class="py-3 px-4 font-bold uppercase text-sm tracking-wider" style="color:#C0623A">Função</th>
+                    <th class="py-3 px-4 font-bold uppercase text-sm tracking-wider" style="color:#C0623A">Camada</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-[#1c2e24]/10">
+                <tr>
+                    <td class="py-4 px-4 text-white font-bold font-mono">FastAPI</td>
+                    <td class="py-4 px-4 text-white/80">Framework Python para APIs REST de alto desempenho</td>
+                    <td class="py-4 px-4"><span class="text-xs px-3 py-1 rounded-full border border-[#1c2e24]/20 bg-[#1c2e24]/10 text-white">Entrada</span></td>
+                </tr>
+                <tr>
+                    <td class="py-4 px-4 font-bold font-mono" style="color:#C0623A">Hermes Agent</td>
+                    <td class="py-4 px-4 text-white/80">Motor de agentes IA com ferramentas nativas de leitura</td>
+                    <td class="py-4 px-4"><span class="text-xs px-3 py-1 rounded-full border font-bold" style="background:rgba(192,98,58,0.15);border-color:rgba(192,98,58,0.4);color:#C0623A">IA — Núcleo</span></td>
+                </tr>
+                <tr>
+                    <td class="py-4 px-4 text-white font-bold font-mono">Pydantic v2</td>
+                    <td class="py-4 px-4 text-white/80">Validação automática de dados de entrada e saída</td>
+                    <td class="py-4 px-4"><span class="text-xs px-3 py-1 rounded-full border border-[#1c2e24]/20 bg-[#1c2e24]/10 text-white">Validação</span></td>
+                </tr>
+                <tr>
+                    <td class="py-4 px-4 text-white font-bold font-mono">Uvicorn</td>
+                    <td class="py-4 px-4 text-white/80">Servidor ASGI para execução da aplicação</td>
+                    <td class="py-4 px-4"><span class="text-xs px-3 py-1 rounded-full border border-[#1c2e24]/20 bg-[#1c2e24]/10 text-white">Servidor</span></td>
+                </tr>
+                <tr>
+                    <td class="py-4 px-4 text-white font-bold font-mono">pytest</td>
+                    <td class="py-4 px-4 text-white/80">11 testes automatizados cobrindo todos os cenários</td>
+                    <td class="py-4 px-4"><span class="text-xs px-3 py-1 rounded-full border border-[#1c2e24]/20 bg-[#1c2e24]/10 text-white">Qualidade</span></td>
+                </tr>
+                <tr>
+                    <td class="py-4 px-4 text-white font-bold font-mono">logging</td>
+                    <td class="py-4 px-4 text-white/80">Logs em terminal e arquivo persistente logs/app.log</td>
+                    <td class="py-4 px-4"><span class="text-xs px-3 py-1 rounded-full border border-[#1c2e24]/20 bg-[#1c2e24]/10 text-white">Observabilidade</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="mt-4 pt-4 border-t border-[#1c2e24]/10">
+        <p class="text-white/30 text-xs italic">* Tecnologias escolhidas em alinhamento com a stack da disciplina e do projeto DAPIA</p>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 07 — ARQUITETURA (card_timeline)
+══════════════════════════════════════════════ -->
+<div class="glass-card rounded-xl p-10 w-full max-w-2xl relative" data-aos="fade-right" data-aos-delay="200">
+    <span class="slide-badge">07 / 14</span>
+    <div class="flex items-center mb-8">
+        <div class="icon-container"><i data-lucide="layers-3" class="primary-color"></i></div>
+        <span class="ornament"></span>
+        <h3 class="text-2xl font-bold text-white">Arquitetura em Camadas</h3>
+    </div>
+    <div class="space-y-8 relative">
+        <div class="absolute left-[19px] top-2 bottom-2 w-0.5 bg-[#1c2e24]/10"></div>
+        <div class="relative pl-14">
+            <div class="absolute left-0 top-1 w-10 h-10 rounded-full tl-dot-active flex items-center justify-center border-4" style="border-color:#E8F0EB">
+                <i data-lucide="globe" class="w-4 h-4 text-white"></i>
+            </div>
+            <div class="flex items-center gap-2 mb-1"><span class="tag-sage">Entrada</span><span class="font-mono text-xs text-white/40">app/api/v1/</span></div>
+            <h4 class="text-base font-bold text-white">Routers — Recebe e valida requisições HTTP</h4>
+            <p class="text-white/50 text-sm">content.py · tasks.py · prefixo /v1/ para versionamento</p>
+        </div>
+        <div class="relative pl-14">
+            <div class="absolute left-0 top-1 w-10 h-10 rounded-full tl-dot-active flex items-center justify-center border-4" style="border-color:#E8F0EB">
+                <i data-lucide="bot" class="w-4 h-4 text-white"></i>
+            </div>
+            <div class="flex items-center gap-2 mb-1"><span class="tag-sage">Negócio</span><span class="font-mono text-xs text-white/40">app/agents/</span></div>
+            <h4 class="text-base font-bold text-white">Agentes — Hermes Agent opera aqui</h4>
+            <p class="text-white/50 text-sm">content_agent.py · tasks_agent.py · lê arquivos e responde</p>
+        </div>
+        <div class="relative pl-14">
+            <div class="absolute left-0 top-1 w-10 h-10 rounded-full tl-dot-active flex items-center justify-center border-4" style="border-color:#E8F0EB">
+                <i data-lucide="settings-2" class="w-4 h-4 text-white"></i>
+            </div>
+            <div class="flex items-center gap-2 mb-1"><span class="tag-sage">Transversal</span><span class="font-mono text-xs text-white/40">app/core/</span></div>
+            <h4 class="text-base font-bold text-white">Core — Compartilhado por todos os módulos</h4>
+            <p class="text-white/50 text-sm">config.py · logger.py · security.py</p>
+        </div>
+        <div class="relative pl-14">
+            <div class="absolute left-0 top-1 w-10 h-10 rounded-full tl-dot-idle flex items-center justify-center border-4" style="border-color:#E8F0EB">
+                <i data-lucide="folder-open" class="w-4 h-4 text-white/60"></i>
+            </div>
+            <div class="flex items-center gap-2 mb-1"><span class="tag-sage">Dados</span><span class="font-mono text-xs text-white/40">data/</span></div>
+            <h4 class="text-base font-bold text-white/80">Arquivos consultados pelos agentes</h4>
+            <p class="text-white/50 text-sm">data/aulas/ → PDFs · data/tarefas/ → DOCX/PDF/TXT</p>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 08 — ESTRUTURA DOS ARQUIVOS (SVG didático)
+══════════════════════════════════════════════ -->
+<div class="glass-card rounded-xl p-8 w-full max-w-6xl relative" data-aos="fade-up" data-aos-delay="200">
+    <span class="slide-badge">08 / 14</span>
+    <div class="flex items-center mb-6">
+        <div class="icon-container"><i data-lucide="folder-tree" class="primary-color"></i></div>
+        <span class="ornament"></span>
+        <h3 class="text-2xl font-bold text-white">Como os arquivos se relacionam</h3>
+    </div>
+    
+
+    <svg width="100%" viewBox="0 0 580 620" role="img" style="display:block; max-height: 72vh; margin: 0 auto; width: auto;">
+      <title>Ordem de dependência dos arquivos do projeto</title>
+      <desc>Diagrama mostrando as quatro camadas do projeto e o arquivo de testes, do mais independente ao orquestrador</desc>
+      <defs>
+        <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+
+      <!-- ── GRUPO 1: CORE ── -->
+      <rect x="20" y="10" width="540" height="108" rx="10" fill="rgba(61,90,74,0.08)" stroke="rgba(61,90,74,0.25)" stroke-width="0.5"/>
+      <text font-family="inherit" font-size="11" font-weight="500" fill="rgba(61,90,74,0.85)" x="36" y="30">1 · Camada Core — não dependem de nada do projeto</text>
+
+      <rect x="36"  y="42" width="150" height="62" rx="7" fill="rgba(255,255,255,0.85)" stroke="rgba(61,90,74,0.3)" stroke-width="0.5"/>
+      <text font-family="inherit" font-size="13" font-weight="500" fill="#3D5A4A" x="111" y="70" text-anchor="middle">config.py</text>
+      <text font-family="inherit" font-size="10" fill="rgba(61,90,74,0.7)" x="111" y="88" text-anchor="middle">variáveis de ambiente</text>
+
+      <rect x="215" y="42" width="150" height="62" rx="7" fill="rgba(255,255,255,0.85)" stroke="rgba(61,90,74,0.3)" stroke-width="0.5"/>
+      <text font-family="inherit" font-size="13" font-weight="500" fill="#3D5A4A" x="290" y="70" text-anchor="middle">logger.py</text>
+      <text font-family="inherit" font-size="10" fill="rgba(61,90,74,0.7)" x="290" y="88" text-anchor="middle">sistema de logs</text>
+
+      <rect x="394" y="42" width="150" height="62" rx="7" fill="rgba(255,255,255,0.85)" stroke="rgba(61,90,74,0.3)" stroke-width="0.5"/>
+      <text font-family="inherit" font-size="13" font-weight="500" fill="#3D5A4A" x="469" y="70" text-anchor="middle">security.py</text>
+      <text font-family="inherit" font-size="10" fill="rgba(61,90,74,0.7)" x="469" y="88" text-anchor="middle">autenticação X-API-Key</text>
+
+      <!-- seta 1→2 -->
+      <line x1="290" y1="118" x2="290" y2="155" stroke="rgba(192,98,58,0.75)" stroke-width="1" marker-end="url(#arr2)"/>
+      <text font-family="inherit" font-size="10" fill="rgba(192,98,58,0.85)" x="298" y="140">usa o core</text>
+
+      <!-- ── GRUPO 2: AGENTES ── -->
+      <rect x="20" y="158" width="540" height="108" rx="10" fill="rgba(192,98,58,0.06)" stroke="rgba(192,98,58,0.25)" stroke-width="0.5"/>
+      <text font-family="inherit" font-size="11" font-weight="500" fill="rgba(192,98,58,0.85)" x="36" y="178">2 · Agentes — lógica de IA, Hermes Agent opera aqui</text>
+
+      <rect x="36"  y="190" width="240" height="62" rx="7" fill="rgba(255,255,255,0.85)" stroke="rgba(192,98,58,0.3)" stroke-width="0.5"/>
+      <text font-family="inherit" font-size="13" font-weight="500" fill="#C0623A" x="156" y="218" text-anchor="middle">content_agent.py</text>
+      <text font-family="inherit" font-size="10" fill="rgba(192,98,58,0.7)" x="156" y="236" text-anchor="middle">agente de conteúdo · PDFs</text>
+
+      <rect x="304" y="190" width="240" height="62" rx="7" fill="rgba(255,255,255,0.85)" stroke="rgba(192,98,58,0.3)" stroke-width="0.5"/>
+      <text font-family="inherit" font-size="13" font-weight="500" fill="#C0623A" x="424" y="218" text-anchor="middle">tasks_agent.py</text>
+      <text font-family="inherit" font-size="10" fill="rgba(192,98,58,0.7)" x="424" y="236" text-anchor="middle">agente de tarefas · prazos</text>
+
+      <!-- seta 2→3 -->
+      <line x1="290" y1="266" x2="290" y2="303" stroke="rgba(192,98,58,0.75)" stroke-width="1" marker-end="url(#arr2)"/>
+      <text font-family="inherit" font-size="10" fill="rgba(192,98,58,0.85)" x="298" y="288">chama os agentes</text>
+
+      <!-- ── GRUPO 3: ENDPOINTS ── -->
+      <rect x="20" y="306" width="540" height="108" rx="10" fill="rgba(61,90,74,0.05)" stroke="rgba(61,90,74,0.2)" stroke-width="0.5"/>
+      <text font-family="inherit" font-size="11" font-weight="500" fill="rgba(61,90,74,0.8)" x="36" y="326">3 · Endpoints — interface HTTP, routers FastAPI</text>
+
+      <rect x="36"  y="338" width="240" height="62" rx="7" fill="rgba(255,255,255,0.85)" stroke="rgba(61,90,74,0.25)" stroke-width="0.5"/>
+      <text font-family="inherit" font-size="13" font-weight="500" fill="#3D5A4A" x="156" y="366" text-anchor="middle">content.py</text>
+      <text font-family="inherit" font-size="10" fill="rgba(61,90,74,0.7)" x="156" y="384" text-anchor="middle">POST /v1/ask</text>
+
+      <rect x="304" y="338" width="240" height="62" rx="7" fill="rgba(255,255,255,0.85)" stroke="rgba(61,90,74,0.25)" stroke-width="0.5"/>
+      <text font-family="inherit" font-size="13" font-weight="500" fill="#3D5A4A" x="424" y="366" text-anchor="middle">tasks.py</text>
+      <text font-family="inherit" font-size="10" fill="rgba(61,90,74,0.7)" x="424" y="384" text-anchor="middle">POST /v1/tasks</text>
+
+      <!-- seta 3→4 -->
+      <line x1="290" y1="414" x2="290" y2="451" stroke="rgba(192,98,58,0.75)" stroke-width="1" marker-end="url(#arr2)"/>
+      <text font-family="inherit" font-size="10" fill="rgba(192,98,58,0.85)" x="298" y="436">monta tudo</text>
+
+      <!-- ── GRUPO 4: MAIN ── -->
+      <rect x="140" y="454" width="300" height="62" rx="10" fill="rgba(110,80,180,0.08)" stroke="rgba(110,80,180,0.35)" stroke-width="0.5"/>
+      <text font-family="inherit" font-size="13" font-weight="500" fill="#4b3580" x="290" y="482" text-anchor="middle">main.py</text>
+      <text font-family="inherit" font-size="10" fill="rgba(75,53,128,0.75)" x="290" y="500" text-anchor="middle">ponto de entrada · orquestra tudo</text>
+
+      <!-- seta 4→5 -->
+      <line x1="290" y1="516" x2="290" y2="553" stroke="rgba(192,98,58,0.75)" stroke-width="1" marker-end="url(#arr2)"/>
+      <text font-family="inherit" font-size="10" fill="rgba(192,98,58,0.85)" x="298" y="538">valida tudo</text>
+
+      <!-- ── GRUPO 5: TESTES ── -->
+      <rect x="140" y="556" width="300" height="50" rx="10" fill="rgba(60,60,60,0.05)" stroke="rgba(60,60,60,0.2)" stroke-width="0.5"/>
+      <text font-family="inherit" font-size="13" font-weight="500" fill="#2a2a2a" x="290" y="578" text-anchor="middle">test_endpoints.py</text>
+      <text font-family="inherit" font-size="10" fill="rgba(40,40,40,0.6)" x="290" y="596" text-anchor="middle">11 testes · mock · todos os cenários</text>
+    </svg>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 09 — VALIDAÇÃO E ERROS (card_tabela)
+══════════════════════════════════════════════ -->
+<div class="glass-card rounded-xl p-8 w-full max-w-4xl overflow-hidden relative" data-aos="fade-up" data-aos-delay="100">
+    <span class="slide-badge">09 / 14</span>
+    <div class="flex items-center mb-8">
+        <div class="icon-container"><i data-lucide="shield-alert" class="primary-color"></i></div>
+        <span class="ornament"></span>
+        <h3 class="text-2xl font-bold text-white">Validação e Tratamento de Erros</h3>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-white/20">
+                    <th class="py-3 px-4 font-bold uppercase text-sm tracking-wider" style="color:#C0623A">Cenário</th>
+                    <th class="py-3 px-4 font-bold uppercase text-sm tracking-wider" style="color:#C0623A">HTTP</th>
+                    <th class="py-3 px-4 font-bold uppercase text-sm tracking-wider" style="color:#C0623A">Implementação</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-white/10">
+                <tr>
+                    <td class="py-3 px-4 text-white/80 text-sm">Sem header X-API-Key ou chave errada</td>
+                    <td class="py-3 px-4"><span class="text-xs px-3 py-1 rounded-full font-bold" style="background:rgba(192,98,58,0.2);border:1px solid rgba(192,98,58,0.4);color:#C0623A">401</span></td>
+                    <td class="py-3 px-4 text-white/60 text-xs font-mono">security.py → require_api_key()</td>
+                </tr>
+                <tr>
+                    <td class="py-3 px-4 text-white/80 text-sm">Campo question ausente ou &lt; 5 chars</td>
+                    <td class="py-3 px-4"><span class="text-xs px-3 py-1 rounded-full font-bold" style="background:rgba(61,90,74,0.08);border:1px solid rgba(61,90,74,0.25);color:#3D5A4A">422</span></td>
+                    <td class="py-3 px-4 text-white/60 text-xs font-mono">Pydantic v2 automático</td>
+                </tr>
+                <tr>
+                    <td class="py-3 px-4 text-white/80 text-sm">Pasta data/aulas/ ou data/tarefas/ vazia</td>
+                    <td class="py-3 px-4"><span class="text-xs px-3 py-1 rounded-full font-bold" style="background:rgba(61,90,74,0.08);border:1px solid rgba(61,90,74,0.25);color:#3D5A4A">404</span></td>
+                    <td class="py-3 px-4 text-white/60 text-xs font-mono">FileNotFoundError capturado</td>
+                </tr>
+                <tr>
+                    <td class="py-3 px-4 text-white/80 text-sm">Erro inesperado no servidor</td>
+                    <td class="py-3 px-4"><span class="text-xs px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white text-xs font-bold">500</span></td>
+                    <td class="py-3 px-4 text-white/60 text-xs font-mono">global_exception_handler</td>
+                </tr>
+                <tr>
+                    <td class="py-3 px-4 text-white/80 text-sm">Resposta válida de qualquer endpoint</td>
+                    <td class="py-3 px-4"><span class="text-xs px-3 py-1 rounded-full font-bold" style="background:rgba(61,90,74,0.08);border:1px solid rgba(61,90,74,0.25);color:#3D5A4A">200</span></td>
+                    <td class="py-3 px-4 text-white/60 text-xs font-mono">Hermes Agent respondeu com sucesso</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="mt-5 p-4 rounded-lg border border-white/10 bg-white/5">
+        <p class="text-xs text-white/50"><strong class="text-white/80">Regra:</strong> Detalhes técnicos de erros internos nunca são expostos ao cliente — o log registra, a resposta HTTP protege.</p>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 10 — SEGURANÇA E LOGS (card_lista)
+══════════════════════════════════════════════ -->
+<div class="glass-card rounded-xl p-10 w-full max-w-2xl relative" data-aos="fade-left" data-aos-delay="200">
+    <span class="slide-badge">10 / 14</span>
+    <div class="flex items-center mb-8">
+        <div class="icon-container"><i data-lucide="lock" class="primary-color"></i></div>
+        <span class="ornament"></span>
+        <h3 class="text-2xl font-bold text-white">Segurança e Logs</h3>
+    </div>
+    <div class="space-y-6">
+        <div class="border-l-2 pl-5" style="border-color:#C0623A">
+            <p class="font-bold text-white mb-1">Autenticação via X-API-Key</p>
+            <p class="text-sm text-white/60">Todos os endpoints de IA exigem o header. Chave configurada via variável de ambiente — nunca hardcoded. Mesmo padrão da API da OpenAI.</p>
+        </div>
+        <div class="border-l-2 pl-5" style="border-color:rgba(61,90,74,0.4)">
+            <p class="font-bold text-white mb-1">Health check público</p>
+            <p class="text-sm text-white/60"><span class="font-mono text-xs primary-color">GET /</span> sem autenticação — retorna <span class="font-mono text-xs">&#123;status: ok, version: 1.0.0&#125;</span> para monitoramento externo.</p>
+        </div>
+        <div class="border-l-2 pl-5" style="border-color:#C0623A">
+            <p class="font-bold text-white mb-1">Sistema de logs duplo</p>
+            <p class="text-sm text-white/60">Terminal (desenvolvimento) + arquivo <span class="font-mono text-xs primary-color">logs/app.log</span> (produção). Formato: <span class="font-mono text-xs text-white/50">timestamp | nível | módulo | mensagem</span></p>
+        </div>
+        <div class="border-l-2 pl-5" style="border-color:rgba(61,90,74,0.4)">
+            <p class="font-bold text-white mb-1">Nível configurável via .env</p>
+            <p class="text-sm text-white/60">LOG_LEVEL aceita DEBUG, INFO, WARNING ou ERROR. Arquivo .env protegido pelo .gitignore — credenciais jamais vão ao repositório.</p>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 11 — TESTES (card_grid)
+══════════════════════════════════════════════ -->
+<div class="glass-card rounded-xl p-8 w-full max-w-3xl relative" data-aos="fade-up" data-aos-delay="300">
+    <span class="slide-badge">11 / 14</span>
+    <div class="flex items-center mb-8">
+        <div class="icon-container"><i data-lucide="test-tube-2" class="primary-color"></i></div>
+        <span class="ornament"></span>
+        <h3 class="text-2xl font-bold text-white">Testes Automatizados</h3>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="rounded-xl p-4 text-center bg-white/5 border border-white/10">
+            <div class="text-4xl font-black primary-color counter" data-target="11">0</div>
+            <p class="text-xs text-white/50 mt-1">Testes totais</p>
+        </div>
+        <div class="rounded-xl p-4 text-center bg-white/5 border border-white/10">
+            <div class="text-4xl font-black counter" style="color:#3D5A4A" data-target="3">0</div>
+            <p class="text-xs text-white/50 mt-1">Autenticação</p>
+        </div>
+        <div class="rounded-xl p-4 text-center bg-white/5 border border-white/10">
+            <div class="text-4xl font-black counter" style="color:#3D5A4A" data-target="3">0</div>
+            <p class="text-xs text-white/50 mt-1">Validação 422</p>
+        </div>
+        <div class="rounded-xl p-4 text-center bg-white/5 border border-white/10">
+            <div class="text-4xl font-black counter" style="color:#3D5A4A" data-target="4">0</div>
+            <p class="text-xs text-white/50 mt-1">Funcionais</p>
+        </div>
+    </div>
+    <div class="space-y-2">
+        <div class="flex items-center gap-3 text-sm p-2 rounded-lg bg-white/5">
+            <span class="text-xs px-2 py-0.5 rounded font-bold" style="background:rgba(192,98,58,0.2);color:#C0623A">401</span>
+            <span class="text-white/70">Sem chave · Chave errada (ambos endpoints)</span>
+        </div>
+        <div class="flex items-center gap-3 text-sm p-2 rounded-lg bg-white/5">
+            <span class="text-xs px-2 py-0.5 rounded font-bold" style="background:rgba(61,90,74,0.08);color:#3D5A4A">422</span>
+            <span class="text-white/70">Pergunta curta · Body ausente · Campo inválido</span>
+        </div>
+        <div class="flex items-center gap-3 text-sm p-2 rounded-lg bg-white/5">
+            <span class="text-xs px-2 py-0.5 rounded font-bold" style="background:rgba(61,90,74,0.08);color:#3D5A4A">404</span>
+            <span class="text-white/70">Pasta de dados vazia (ambos endpoints)</span>
+        </div>
+        <div class="flex items-center gap-3 text-sm p-2 rounded-lg bg-white/5">
+            <span class="text-xs px-2 py-0.5 rounded font-bold" style="background:rgba(61,90,74,0.1);color:#3D5A4A">200</span>
+            <span class="text-white/70">Respostas válidas com mock do Hermes Agent · Health check</span>
+        </div>
+    </div>
+    <div class="mt-5 p-3 rounded-lg border border-white/10 bg-white/5">
+        <p class="text-xs text-white/40 font-mono">$ pytest tests/ -v &nbsp;&nbsp;<span class="primary-color">→ 11 passed in &lt;1s</span></p>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 12 — DOCUMENTAÇÃO (card_lista adaptado)
+══════════════════════════════════════════════ -->
+<div class="glass-card rounded-xl p-10 w-full max-w-2xl relative" data-aos="fade-right" data-aos-delay="400">
+    <span class="slide-badge">12 / 14</span>
+    <div class="flex items-center mb-8">
+        <div class="icon-container"><i data-lucide="book-marked" class="primary-color"></i></div>
+        <span class="ornament"></span>
+        <h3 class="text-2xl font-bold text-white">Documentação e Repositório</h3>
+    </div>
+    <div class="space-y-5">
+        <div class="flex items-start gap-4 p-4 rounded-xl" style="background:rgba(192,98,58,0.08);border:1px solid rgba(192,98,58,0.2)">
+            <i data-lucide="globe" class="w-7 h-7 primary-color flex-shrink-0 mt-0.5"></i>
+            <div>
+                <p class="font-bold text-white">Swagger UI em /docs</p>
+                <p class="text-sm text-white/60 mt-1">Gerado automaticamente pelo FastAPI — endpoints, modelos, exemplos e autenticação integrada. Zero esforço adicional.</p>
+            </div>
+        </div>
+        <div class="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
+            <i data-lucide="file-text" class="w-7 h-7 flex-shrink-0 mt-0.5" style="color:#3D5A4A"></i>
+            <div>
+                <p class="font-bold text-white">README.md completo</p>
+                <p class="text-sm text-white/60 mt-1">Clone → ambiente virtual → instalação → configuração → execução. Qualquer desenvolvedor roda o projeto sem contato com o autor.</p>
+            </div>
+        </div>
+        <div class="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
+            <i data-lucide="key-round" class="w-7 h-7 flex-shrink-0 mt-0.5" style="color:#3D5A4A"></i>
+            <div>
+                <p class="font-bold text-white">.env.example</p>
+                <p class="text-sm text-white/60 mt-1">Documenta todas as variáveis necessárias sem expor credenciais reais. Protegido pelo .gitignore.</p>
+            </div>
+        </div>
+        <div class="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
+            <i data-lucide="github" class="w-7 h-7 flex-shrink-0 mt-0.5" style="color:#3D5A4A"></i>
+            <div>
+                <p class="font-bold text-white">Repositório público no GitHub</p>
+                <p class="text-sm text-white/60 mt-1">Código-fonte + README + testes + .env.example. Entregável completo para avaliação.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 13 — RESUMO REQUISITOS (card_progresso)
+══════════════════════════════════════════════ -->
+<div class="glass-card rounded-xl p-8 w-full max-w-3xl relative" data-aos="fade-up" data-aos-delay="500">
+    <span class="slide-badge">13 / 14</span>
+    <div class="flex items-center mb-8">
+        <div class="icon-container"><i data-lucide="clipboard-check" class="primary-color"></i></div>
+        <span class="ornament"></span>
+        <h3 class="text-2xl font-bold text-white">Requisitos Atendidos</h3>
+    </div>
+    <div class="space-y-4">
+        <div class="flex items-center gap-4 p-3 rounded-lg bg-white/5 border border-white/10">
+            <i data-lucide="check-circle-2" class="w-5 h-5 flex-shrink-0 primary-color"></i>
+            <div class="flex-1">
+                <p class="text-sm font-semibold text-white">2 endpoints de IA com operações distintas</p>
+                <p class="text-xs text-white/40 font-mono">POST /v1/ask · POST /v1/tasks</p>
+            </div>
+            <div class="w-24 h-1.5 rounded-full bg-[#1c2e24]/10"><div class="h-full rounded-full progress-bar-fill" style="width:0%" data-width="100"></div></div>
+        </div>
+        <div class="flex items-center gap-4 p-3 rounded-lg bg-white/5 border border-white/10">
+            <i data-lucide="check-circle-2" class="w-5 h-5 flex-shrink-0 primary-color"></i>
+            <div class="flex-1">
+                <p class="text-sm font-semibold text-white">Validação de dados</p>
+                <p class="text-xs text-white/40 font-mono">Pydantic v2 · min_length · max_length · HTTP 422</p>
+            </div>
+            <div class="w-24 h-1.5 rounded-full bg-[#1c2e24]/10"><div class="h-full rounded-full progress-bar-fill" style="width:0%" data-width="100"></div></div>
+        </div>
+        <div class="flex items-center gap-4 p-3 rounded-lg bg-white/5 border border-white/10">
+            <i data-lucide="check-circle-2" class="w-5 h-5 flex-shrink-0 primary-color"></i>
+            <div class="flex-1">
+                <p class="text-sm font-semibold text-white">Tratamento de erros</p>
+                <p class="text-xs text-white/40 font-mono">HTTP 401 · 404 · 422 · 500 com mensagens descritivas</p>
+            </div>
+            <div class="w-24 h-1.5 rounded-full bg-[#1c2e24]/10"><div class="h-full rounded-full progress-bar-fill" style="width:0%" data-width="100"></div></div>
+        </div>
+        <div class="flex items-center gap-4 p-3 rounded-lg bg-white/5 border border-white/10">
+            <i data-lucide="check-circle-2" class="w-5 h-5 flex-shrink-0 primary-color"></i>
+            <div class="flex-1">
+                <p class="text-sm font-semibold text-white">Logs</p>
+                <p class="text-xs text-white/40 font-mono">logs/app.log · terminal · nível configurável via .env</p>
+            </div>
+            <div class="w-24 h-1.5 rounded-full bg-[#1c2e24]/10"><div class="h-full rounded-full progress-bar-fill" style="width:0%" data-width="100"></div></div>
+        </div>
+        <div class="flex items-center gap-4 p-3 rounded-lg bg-white/5 border border-white/10">
+            <i data-lucide="check-circle-2" class="w-5 h-5 flex-shrink-0 primary-color"></i>
+            <div class="flex-1">
+                <p class="text-sm font-semibold text-white">Segurança</p>
+                <p class="text-xs text-white/40 font-mono">X-API-Key · variável de ambiente · .gitignore</p>
+            </div>
+            <div class="w-24 h-1.5 rounded-full bg-[#1c2e24]/10"><div class="h-full rounded-full progress-bar-fill" style="width:0%" data-width="100"></div></div>
+        </div>
+        <div class="flex items-center gap-4 p-3 rounded-lg bg-white/5 border border-white/10">
+            <i data-lucide="check-circle-2" class="w-5 h-5 flex-shrink-0 primary-color"></i>
+            <div class="flex-1">
+                <p class="text-sm font-semibold text-white">Versionamento</p>
+                <p class="text-xs text-white/40 font-mono">Prefixo /v1/ em todas as rotas de IA</p>
+            </div>
+            <div class="w-24 h-1.5 rounded-full bg-[#1c2e24]/10"><div class="h-full rounded-full progress-bar-fill" style="width:0%" data-width="100"></div></div>
+        </div>
+        <div class="flex items-center gap-4 p-3 rounded-lg bg-white/5 border border-white/10">
+            <i data-lucide="check-circle-2" class="w-5 h-5 flex-shrink-0 primary-color"></i>
+            <div class="flex-1">
+                <p class="text-sm font-semibold text-white">Repositório + Documentação + Testes</p>
+                <p class="text-xs text-white/40 font-mono">GitHub público · README · Swagger · 11 testes</p>
+            </div>
+            <div class="w-24 h-1.5 rounded-full bg-[#1c2e24]/10"><div class="h-full rounded-full progress-bar-fill" style="width:0%" data-width="100"></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 14 — ENCERRAMENTO / DEMO (card_citacao)
+══════════════════════════════════════════════ -->
+<div class="glass-card rounded-xl p-10 w-full max-w-2xl text-center relative" data-aos="fade-up" data-aos-delay="600">
+    <span class="slide-badge">14 / 14</span>
+    <div class="flex items-center justify-center mb-8">
+        <div class="icon-container"><i data-lucide="monitor-play" class="primary-color"></i></div>
+        <span class="ornament"></span>
+        <h3 class="text-2xl font-bold text-white">Demonstração ao Vivo</h3>
+        <span class="ornament"></span>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8 text-left">
+        <div class="p-3 rounded-lg bg-white/5 border border-white/10 text-center">
+            <i data-lucide="play-circle" class="w-6 h-6 primary-color mx-auto mb-2"></i>
+            <p class="text-xs text-white/70">Inicialização + Swagger</p>
+        </div>
+        <div class="p-3 rounded-lg bg-white/5 border border-white/10 text-center">
+            <i data-lucide="message-circle-question" class="w-6 h-6 primary-color mx-auto mb-2"></i>
+            <p class="text-xs text-white/70">POST /v1/ask ao vivo</p>
+        </div>
+        <div class="p-3 rounded-lg bg-white/5 border border-white/10 text-center">
+            <i data-lucide="calendar-clock" class="w-6 h-6 primary-color mx-auto mb-2"></i>
+            <p class="text-xs text-white/70">POST /v1/tasks ao vivo</p>
+        </div>
+        <div class="p-3 rounded-lg bg-white/5 border border-white/10 text-center">
+            <i data-lucide="shield-x" class="w-6 h-6 primary-color mx-auto mb-2"></i>
+            <p class="text-xs text-white/70">Erros 401 / 422</p>
+        </div>
+        <div class="p-3 rounded-lg bg-white/5 border border-white/10 text-center">
+            <i data-lucide="scroll-text" class="w-6 h-6 primary-color mx-auto mb-2"></i>
+            <p class="text-xs text-white/70">Logs em tempo real</p>
+        </div>
+        <div class="p-3 rounded-lg bg-white/5 border border-white/10 text-center">
+            <i data-lucide="flask-conical" class="w-6 h-6 primary-color mx-auto mb-2"></i>
+            <p class="text-xs text-white/70">pytest tests/ -v</p>
+        </div>
+    </div>
+    <div class="w-12 h-1 primary-bg mx-auto mb-6 rounded-full"></div>
+    <p class="text-lg font-bold text-white mb-1">Eliane Apolinario</p>
+    <p class="text-sm text-white/50 mb-4">Pós-Graduação em Sistemas e Agentes Inteligentes · INF/UFG</p>
+    <p class="text-xs mb-2" style="color:rgba(61,90,74,0.8)">Professor: <strong class="text-white/60">Rogério Carvalho</strong></p>
+    <div class="flex items-center justify-center gap-4 flex-wrap">
+        <a href="https://hermes-agent.nousresearch.com" target="_blank" class="tag-sage text-xs hover:opacity-80 transition-opacity">hermes-agent.nousresearch.com</a>
+        <span class="tag-sage text-xs">[link do repositório GitHub]</span>
+    </div>
+</div>
+
+</main>
+
+<footer class="py-12 text-center text-white/30 text-sm">
+    <p>API de IA Acadêmica · Trabalho Final — Construção de APIs para IA · INF/UFG · 2025/2026</p>
+    <div class="mt-4 inline-flex items-center gap-3 px-6 py-3 rounded-full" style="background:rgba(61,90,74,0.05);border:1px solid rgba(192,98,58,0.25)">
+        <span class="text-xs font-mono" style="color:#3D5A4A">Professor:</span>
+        <span class="text-sm font-bold text-white/80">Rogério Carvalho</span>
+        <span style="color:rgba(192,98,58,0.5)">―――</span>
+        <span class="text-xs font-mono" style="color:#3D5A4A">Aluna:</span>
+        <span class="text-sm font-bold text-white/80">Eliane Apolinario</span>
+    </div>
+</footer>
+
+<script>
+    AOS.init({ duration: 800, once: true, offset: 80 });
+    lucide.createIcons();
+
+    const cardSections = [];
+
+    function buildCardSections() {
+        cardSections.length = 0;
+        const wrappers = document.querySelectorAll('.fullscreen-wrapper');
+        if (wrappers.length > 0) {
+            wrappers.forEach(el => cardSections.push(el));
+        } else {
+            document.querySelectorAll('main > .glass-card, main > div:not(.glass-card)').forEach(el => cardSections.push(el));
+        }
+    }
+
+    function getCurrentSectionIndex() {
+        const scrollTop = window.scrollY + window.innerHeight * 0.3;
+        let idx = -1;
+        for (let i = 0; i < cardSections.length; i++) {
+            if (cardSections[i].offsetTop <= scrollTop) idx = i;
+        }
+        return idx;
+    }
+
+    let wasAtBottom = false;
+    window.addEventListener('scroll', () => {
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        document.getElementById('reading-progress').style.width = ((scrollTop / docHeight) * 100) + '%';
+        const btn = document.getElementById('next-card');
+        scrollTop > 300 ? btn.classList.add('visible') : btn.classList.remove('visible');
+        // Só recria ícone quando estado muda — evita piscar a cada scroll
+        const atBottom = (scrollTop + window.innerHeight) >= (document.documentElement.scrollHeight - 100);
+        if (atBottom !== wasAtBottom) {
+            wasAtBottom = atBottom;
+            const icon = document.getElementById('next-card-icon');
+            icon.setAttribute('data-lucide', atBottom ? 'chevron-up' : 'chevron-down');
+            lucide.createIcons({ nodes: [icon] });
+        }
+    });
+
+    document.getElementById('next-card').addEventListener('click', () => {
+        const atBottom = (window.scrollY + window.innerHeight) >= (document.documentElement.scrollHeight - 100);
+        if (atBottom) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+        const nextIdx = getCurrentSectionIndex() + 1;
+        if (nextIdx < cardSections.length) cardSections[nextIdx].scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    function animateCounters() {
+        document.querySelectorAll('.counter').forEach(counter => {
+            const target = parseInt(counter.getAttribute('data-target'));
+            const increment = target / (2000 / 16);
+            let current = 0;
+            let started = false;
+            const update = () => {
+                current += increment;
+                if (current < target) { counter.textContent = Math.ceil(current); requestAnimationFrame(update); }
+                else counter.textContent = target;
+            };
+            const obs = new IntersectionObserver((entries) => {
+                entries.forEach(e => {
+                    if (e.isIntersecting && !started) {
+                        started = true;
+                        obs.disconnect();
+                        update();
+                    }
+                });
+            });
+            obs.observe(counter);
+        });
+    }
+
+    function animateProgressBars() {
+        document.querySelectorAll('.progress-bar-fill').forEach(bar => {
+            let triggered = false;
+            const obs = new IntersectionObserver((entries) => {
+                entries.forEach(e => {
+                    if (e.isIntersecting && !triggered) {
+                        triggered = true;
+                        obs.disconnect();
+                        setTimeout(() => { bar.style.width = bar.getAttribute('data-width') + '%'; }, 200);
+                    }
+                });
+            });
+            obs.observe(bar);
+        });
+    }
+
+    function setupFullScreenWrappers() {
+        const main = document.querySelector('main');
+        if (!main) return;
+        main.classList.remove('gap-[60vh]', 'py-20');
+        Array.from(main.children).forEach(child => {
+            if (!child.classList.contains('fullscreen-wrapper')) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'min-h-screen w-full flex items-center justify-center fullscreen-wrapper p-4';
+                child.parentNode.insertBefore(wrapper, child);
+                wrapper.appendChild(child);
+            }
+        });
+        buildCardSections();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        setupFullScreenWrappers();
+        setTimeout(animateCounters, 500);
+        setTimeout(animateProgressBars, 600);
+
+        document.getElementById('header-next-btn')?.addEventListener('click', () => {
+            if (cardSections.length > 0) cardSections[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+
+        document.addEventListener('keydown', (e) => {
+            const idx = getCurrentSectionIndex();
+            if (['ArrowRight','ArrowDown','PageDown'].includes(e.key)) {
+                e.preventDefault();
+                const next = idx + 1;
+                if (next < cardSections.length) cardSections[next].scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else if (['ArrowLeft','ArrowUp','PageUp'].includes(e.key)) {
+                e.preventDefault();
+                const prev = idx - 1;
+                prev >= 0 ? cardSections[prev].scrollIntoView({ behavior: 'smooth', block: 'start' }) : window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+
+        window.addEventListener('resize', setupFullScreenWrappers);
+    });
+</script>
+</body>
+</html>
